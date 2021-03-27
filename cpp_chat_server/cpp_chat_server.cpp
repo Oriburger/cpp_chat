@@ -1,20 +1,71 @@
-﻿// cpp_chat_server.cpp : 이 파일에는 'main' 함수가 포함됩니다. 거기서 프로그램 실행이 시작되고 종료됩니다.
-//
+﻿#include <iostream>
+#include <string>
+#include <winsock2.h>
+using namespace std;
 
-#include <iostream>
+void ShowErrorMessage(string message)
+{
+	cout << "[Error occured] : " << message << '\n';
+	system("pause");
+	exit(1);
+}
 
 int main()
 {
-    std::cout << "Hello World!\n";
+	WSADATA wsaData;
+	SOCKET serverSocket, clientSocket;
+	SOCKADDR_IN serverAddress, clientAddress;
+
+	int serverPort = 9876;
+	char received[256];
+
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData)) //Winsock 초기화
+		ShowErrorMessage("WSAStartup()");
+
+	serverSocket = socket(PF_INET, SOCK_STREAM, 0); //TCP 소켓 생성
+	
+	if (serverSocket == INVALID_SOCKET)
+		ShowErrorMessage("socket()");
+
+	memset(&serverAddress, 0, sizeof(serverAddress));
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_addr.s_addr = htonl(INADDR_ANY); //4byte 정수를 네트워크 바이트 형식으로
+	serverAddress.sin_port = htons(serverPort); //2byte 정수를 네트워크 바이트 형식으로 
+
+	if (bind(serverSocket, (SOCKADDR*)&serverAddress, sizeof(serverAddress)) == SOCKET_ERROR)
+		ShowErrorMessage("bind()");
+	cout << "[Current State] bind()\n";
+
+	if (listen(serverSocket, 5) == SOCKET_ERROR)
+		ShowErrorMessage("listen()");
+	cout << "[Current State] listen()\n";
+
+	int sizeClientAddress = sizeof(clientAddress);
+	clientSocket = accept(serverSocket, (SOCKADDR*)&clientAddress, &sizeClientAddress);
+	cout << "[Current State] accept()\n";
+
+	if (clientSocket == INVALID_SOCKET)
+		ShowErrorMessage("accept()");
+
+	cout << "---Connection Established---\n";
+	while (1)
+	{
+		int length = recv(clientSocket, received, sizeof(received), 0);
+		received[length] = NULL;
+		cout << "Message from client> " << received << '\n';
+		cout << "Send the message : " << received << '\n';
+		if (!strcmp(received, "exit"))
+		{
+			send(clientSocket, received, sizeof(received) - 1, 0);
+			cout << "[Current State] Server is shutting down...\n";
+			break;
+		}
+		send(clientSocket, received, sizeof(received) - 1, 0);
+	}
+	closesocket(clientSocket);
+	closesocket(serverSocket);
+	WSACleanup();
+	system("pause");
+	
+	return 0;
 }
-
-// 프로그램 실행: <Ctrl+F5> 또는 [디버그] > [디버깅하지 않고 시작] 메뉴
-// 프로그램 디버그: <F5> 키 또는 [디버그] > [디버깅 시작] 메뉴
-
-// 시작을 위한 팁: 
-//   1. [솔루션 탐색기] 창을 사용하여 파일을 추가/관리합니다.
-//   2. [팀 탐색기] 창을 사용하여 소스 제어에 연결합니다.
-//   3. [출력] 창을 사용하여 빌드 출력 및 기타 메시지를 확인합니다.
-//   4. [오류 목록] 창을 사용하여 오류를 봅니다.
-//   5. [프로젝트] > [새 항목 추가]로 이동하여 새 코드 파일을 만들거나, [프로젝트] > [기존 항목 추가]로 이동하여 기존 코드 파일을 프로젝트에 추가합니다.
-//   6. 나중에 이 프로젝트를 다시 열려면 [파일] > [열기] > [프로젝트]로 이동하고 .sln 파일을 선택합니다.
