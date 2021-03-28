@@ -2,11 +2,11 @@
 #include<iostream>
 #include<string>
 #include<winsock2.h>
-
 using namespace std;
+
 void ShowErrorMessage(string message)
 {
-	cout << "[오류발생]: " << message << '\n';
+	cout << "Error occured! : " << message << '\n';
 	system("pause");
 	exit(1);
 }
@@ -16,14 +16,25 @@ int main()
 	WSADATA wsaData;
 	SOCKET clientSocket;
 	SOCKADDR_IN serverAddress;
-	int serverPort = 9876;
+	const int serverPort = 9876;
 	char received[256];
 	string sent;
-	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) // Winsock을초기화합니다.
+
+	/* ------ Init Winsock -------------------- */
+	cout << "Initialize Winsock2...   ";
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
 		ShowErrorMessage("WSAStartup()");
+	cout << "Complete!\n";
+
+	/* ------ Create TCP Socket -------------------- */
+	cout << "Create TCP socket...     ";
 	clientSocket = socket(PF_INET, SOCK_STREAM, 0); // TCP 소켓을생성합니다.
+
 	if (clientSocket == INVALID_SOCKET)
 		ShowErrorMessage("socket()");
+	cout << "Complete!\n";
+
+	/* ------ Connect to server ------------------------*/
 	memset(&serverAddress, 0, sizeof(serverAddress));
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_addr.s_addr = inet_addr("127.0.0.1"); // 문자열IP를네트워크바이트형식으로
@@ -31,22 +42,33 @@ int main()
 
 	if (connect(clientSocket, (SOCKADDR*)&serverAddress, sizeof(serverAddress)) == SOCKET_ERROR)
 		ShowErrorMessage("connect()");
-	cout << "[현재상태] connect()\n";
-	while (1) { // 반복적으로서버로메시지를전송하고에코메시지를전달받습니다.
-		cout << "[메시지전송]: ";
+	cout << "Current State : connect()\n";
+
+	/* ------ Send & Recv ---------------- */
+	while (1)
+	{ 
+		cout << "Send Message : ";
 		getline(cin, sent);
+
 		if (sent == "") continue;
+
 		send(clientSocket, sent.c_str(), sent.length(), 0);
+
 		int length = recv(clientSocket, received, sizeof(received), 0);
+
 		received[length] = '\0';
-		if (strcmp(received, "[exit]") == 0) {
-			cout << "[서버종료]\n";
+
+		if (strcmp(received, "exit") == 0) 
+		{
+			cout << "Server is shutting down...\n";
 			break;
 		}
-		cout << "[서버메시지]: " << received << '\n';
+		cout << "Server : " << received << '\n';
 	}
+
 	closesocket(clientSocket);
 	WSACleanup();
 	system("pause");
+
 	return 0;
 }
