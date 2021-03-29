@@ -1,5 +1,6 @@
 ﻿#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <iostream>
+#include <cstdio>
 #include <string>
 #include <thread>
 #include <winsock2.h>
@@ -85,13 +86,13 @@ bool ConnectToServer()
 
 void RecvStr()
 {
-	while (!exitFlag)
+	while (1)
 	{
 		int length = recv(clientSocket, received, sizeof(received), 0);
 
 		received[length] = '\0';
 
-		if (strcmp(received, "exit") == 0)
+		if (!strcmp(received, "exit"))
 		{
 			cout << "Server is shutting down...\n";
 			break;
@@ -106,7 +107,7 @@ void SendStr()
 	{
 		string sent; 
 
-		cout << "Send Message : ";
+		//cout << "Send Message : ";
 		getline(cin, sent);
 
 		if (sent == "") continue;

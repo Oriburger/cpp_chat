@@ -94,21 +94,16 @@ void CloseServer()
 
 void RecvStr()
 {
-	while (!exitFlag)
+	while (1)
 	{
+		if (exitFlag) break;
+
 		char received[256];
 		memset(received, 0, sizeof(received));
 		int length = recv(clientSocket, received, sizeof(received), 0); //수신한 길이를 return
 
-		cout << "Client : " << received << '\n';
 		received[length] = NULL;
-
-		if (!strcmp(received, "exit"))
-		{
-			send(clientSocket, received, sizeof(received) - 1, 0);
-			cout << "Server is shutting down...\n";
-			return;
-		}
+		cout << "Client : " << received << '\n';
 	}
 }
 
@@ -118,7 +113,7 @@ void SendStr()
 	{
 		string sent;
 
-		cout << "Send Message : ";
+		//cout << "Send Message : ";
 		getline(cin, sent);
 		send(clientSocket, sent.c_str(), sent.length(), 0);
 
