@@ -1,8 +1,39 @@
 ﻿#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include<iostream>
-#include<string>
-#include<winsock2.h>
+#include <iostream>
+#include <string>
+#include <thread>
+#include <winsock2.h>
 using namespace std;
+
+WSADATA wsaData;
+SOCKET clientSocket;
+SOCKADDR_IN serverAddress;
+
+bool exitFlag = false;
+const int serverPort = 9876;
+char received[256];
+
+void ShowErrorMessage(string message);
+bool InitClient();
+void CloseClient();
+bool ConnectToServer();
+void RecvStr();
+void SendStr();
+
+int main()
+{
+	if (!InitClient()) return 0;
+	if(!ConnectToServer()) return 0;
+
+	thread t1(RecvStr);
+	thread t2(SendStr);
+
+	t1.join();
+	t2.join();
+	
+	CloseClient();
+	return 0;
+}
 
 void ShowErrorMessage(string message)
 {
@@ -11,15 +42,8 @@ void ShowErrorMessage(string message)
 	exit(1);
 }
 
-int main()
+bool InitClient()
 {
-	WSADATA wsaData;
-	SOCKET clientSocket;
-	SOCKADDR_IN serverAddress;
-	const int serverPort = 9876;
-	char received[256];
-	string sent;
-
 	/* ------ Init Winsock -------------------- */
 	cout << "Initialize Winsock2...   ";
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
@@ -34,6 +58,18 @@ int main()
 		ShowErrorMessage("socket()");
 	cout << "Complete!\n";
 
+	return true;
+}
+
+void CloseClient()
+{
+	closesocket(clientSocket);
+	WSACleanup();
+	system("pause");
+}
+
+bool ConnectToServer()
+{
 	/* ------ Connect to server ------------------------*/
 	memset(&serverAddress, 0, sizeof(serverAddress));
 	serverAddress.sin_family = AF_INET;
@@ -44,31 +80,42 @@ int main()
 		ShowErrorMessage("connect()");
 	cout << "Current State : connect()\n";
 
-	/* ------ Send & Recv ---------------- */
-	while (1)
-	{ 
-		cout << "Send Message : ";
-		getline(cin, sent);
+	return true;
+}
 
-		if (sent == "") continue;
-
-		send(clientSocket, sent.c_str(), sent.length(), 0);
-
+void RecvStr()
+{
+	while (!exitFlag)
+	{
 		int length = recv(clientSocket, received, sizeof(received), 0);
 
 		received[length] = '\0';
 
-		if (strcmp(received, "exit") == 0) 
+		if (strcmp(received, "exit") == 0)
 		{
 			cout << "Server is shutting down...\n";
 			break;
 		}
 		cout << "Server : " << received << '\n';
 	}
+}
 
-	closesocket(clientSocket);
-	WSACleanup();
-	system("pause");
+void SendStr()
+{
+	while (1)
+	{
+		string sent; 
 
-	return 0;
+		cout << "Send Message : ";
+		getline(cin, sent);
+
+		if (sent == "") continue;
+		else if (sent == "exit")
+		{
+			exitFlag = true;
+			return;
+		}
+
+		send(clientSocket, sent.c_str(), sent.length(), 0);
+	}
 }
