@@ -4,6 +4,7 @@
 #include <string>
 #include <thread>
 #include <winsock2.h>
+#include "chatUI.h"
 using namespace std;
 
 WSADATA wsaData;
@@ -13,6 +14,7 @@ SOCKADDR_IN serverAddress;
 bool exitFlag = false;
 const int serverPort = 9876;
 char received[256];
+deque<Message> stringArr;
 
 void ShowErrorMessage(string message);
 bool InitClient();
@@ -82,6 +84,7 @@ bool ConnectToServer()
 		ShowErrorMessage("connect()");
 	cout << "Current State : connect()\n";
 
+	cout << "---Connection Established---\n";
 	return true;
 }
 
@@ -89,16 +92,20 @@ void RecvStr()
 {
 	while (1)
 	{
+		gotoxy(MAX_MESSAGE_CNT + 10, 15);
 		int length = recv(clientSocket, received, sizeof(received), 0);
 
-		received[length] = '\0';
+		received[length] = NULL;
+
+		stringArr.push_back({ OTHER, (string)received });
+		if (stringArr.size() > MAX_MESSAGE_CNT)	stringArr.pop_front();
+		UpdateChatInterface(stringArr);
 
 		if (!strcmp(received, "exit"))
 		{
 			cout << "Server is shutting down...\n";
 			break;
 		}
-		cout << "Server : " << received << '\n';
 	}
 }
 
@@ -107,8 +114,9 @@ void SendStr()
 	while (1)
 	{
 		string sent; 
+		gotoxy(MAX_MESSAGE_CNT + 10, 0);
 
-		//cout << "Send Message : ";
+		cout << "Send Message : ";
 		getline(cin, sent);
 
 		if (sent == "") continue;
@@ -117,7 +125,12 @@ void SendStr()
 			exitFlag = true;
 			return;
 		}
-
 		send(clientSocket, sent.c_str(), sent.length(), 0);
+
+		stringArr.push_back({ ME, sent });
+		if (stringArr.size() > MAX_MESSAGE_CNT)	stringArr.pop_front();
+		UpdateChatInterface(stringArr);
+		gotoxy(MAX_MESSAGE_CNT + 10, 0);
+		cout << BLANK_STR;
 	}
 }

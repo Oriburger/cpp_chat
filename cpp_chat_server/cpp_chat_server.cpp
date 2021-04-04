@@ -9,7 +9,6 @@ SOCKADDR_IN serverAddress, clientAddress;
 
 bool exitFlag = false;
 const int serverPort = 9876;
-int insertPos = 0;
 deque<Message> stringArr;
 
 void ShowErrorMessage(string message);
@@ -103,7 +102,7 @@ void RecvStr()
 {
 	while (1)
 	{
-		gotoxy(MAX_MESSAGE_CNT + 8, 15);
+		gotoxy(MAX_MESSAGE_CNT + 10, 15);
 		if (exitFlag) break;
 
 		char received[256];
@@ -122,11 +121,10 @@ void SendStr()
 	while (1)
 	{
 		string sent;
-		gotoxy(MAX_MESSAGE_CNT + 8, 1);
+		gotoxy(MAX_MESSAGE_CNT + 10, 0);
 
 		cout << "Send Message : ";
 		getline(cin, sent);
-		send(clientSocket, sent.c_str(), sent.length(), 0);
 
 		if (sent == "") continue;
 		else if (sent == "exit")
@@ -134,10 +132,12 @@ void SendStr()
 			exitFlag = true;
 			return;
 		}
+		send(clientSocket, sent.c_str(), sent.length(), 0);
+
 		stringArr.push_back({ ME, sent });
 		if (stringArr.size() > MAX_MESSAGE_CNT)	stringArr.pop_front();
 		UpdateChatInterface(stringArr);
-		gotoxy(MAX_MESSAGE_CNT + 2, 0);
+		gotoxy(MAX_MESSAGE_CNT + 10, 0);
 		cout << BLANK_STR;
 	}
 }
