@@ -141,7 +141,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="chatUI.cpp" />
     <ClCompile Include="cpp_chat_server.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="chatUI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

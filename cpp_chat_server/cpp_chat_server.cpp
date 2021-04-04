@@ -1,8 +1,7 @@
 ﻿#include <iostream>
-#include <string>
 #include <thread>
 #include <winsock2.h>
-using namespace std;
+#include "chatUI.h"
 
 WSADATA wsaData;
 SOCKET serverSocket, clientSocket;
@@ -10,9 +9,12 @@ SOCKADDR_IN serverAddress, clientAddress;
 
 bool exitFlag = false;
 const int serverPort = 9876;
+int insertPos = 0;
+deque<Message> stringArr;
 
 void ShowErrorMessage(string message);
 bool InitServer();
+void ConnectClient();
 void CloseServer();
 void RecvStr();
 void SendStr();
@@ -42,17 +44,17 @@ void ShowErrorMessage(string message)
 
 bool InitServer()
 {
-	/* ------ Init Winsock -------------------- */
+	// ------ Init Winsock -------------------- 
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData))
 		ShowErrorMessage("WSAStartup()");
 	cout << "Server is running .. \n";
 
-	/* ------ Create TCP Socket -------------------- */
+	// ------ Create TCP Socket --------------------
 	serverSocket = socket(PF_INET, SOCK_STREAM, 0); //TCP 소켓 생성, PF_INET? : IPv4 인터넷 프로토콜
 	if (serverSocket == INVALID_SOCKET)
 		ShowErrorMessage("socket()");
 
-	/* ------ Bind Socket ------------------------*/
+	// ------ Bind Socket ------------------------
 	memset(&serverAddress, 0, sizeof(serverAddress));
 	serverAddress.sin_family = AF_INET; //AF_INET? : IPv4 주소 체계 
 	serverAddress.sin_addr.s_addr = htonl(INADDR_ANY); //4byte 정수를 네트워크 바이트 형식으로
@@ -63,22 +65,7 @@ bool InitServer()
 		ShowErrorMessage("bind()");
 	cout << "Current State : bind()\n";
 
-	/* ------ Listen --------------------- */
-	if (listen(serverSocket, 5) == SOCKET_ERROR)
-		ShowErrorMessage("listen()");
-	cout << "Current State : listen()\n";
-
-	/* ------ Accept -------------------- */
-	int sizeClientAddress = sizeof(clientAddress);
-
-	clientSocket = accept(serverSocket, (SOCKADDR*)&clientAddress, &sizeClientAddress);
-	cout << "Current State : accept()\n";
-	cout << " Client Address : " << clientAddress.sin_addr.s_addr << '\n';
-
-	if (clientSocket == INVALID_SOCKET)
-		ShowErrorMessage("accept()");
-
-	cout << "---Connection Established---\n";
+	ConnectClient();
 
 	return true;
 }
@@ -92,10 +79,31 @@ void CloseServer()
 	system("pause");
 }
 
+void ConnectClient()
+{
+	// ------ Listen --------------------- 
+	if (listen(serverSocket, 5) == SOCKET_ERROR)
+		ShowErrorMessage("listen()");
+	cout << "Current State : listen()\n";
+
+	// ------ Accept -------------------- 
+	int sizeClientAddress = sizeof(clientAddress);
+
+	clientSocket = accept(serverSocket, (SOCKADDR*)&clientAddress, &sizeClientAddress);
+	cout << "Current State : accept()\n";
+	cout << " Client Address : " << clientAddress.sin_addr.s_addr << '\n';
+
+	if (clientSocket == INVALID_SOCKET)
+		ShowErrorMessage("accept()");
+
+	cout << "---Connection Established---\n";
+}
+
 void RecvStr()
 {
 	while (1)
 	{
+		gotoxy(MAX_MESSAGE_CNT + 8, 15);
 		if (exitFlag) break;
 
 		char received[256];
@@ -103,7 +111,9 @@ void RecvStr()
 		int length = recv(clientSocket, received, sizeof(received), 0); //수신한 길이를 return
 
 		received[length] = NULL;
-		cout << "Client : " << received << '\n';
+		stringArr.push_back({ OTHER, (string)received });
+		if (stringArr.size() > MAX_MESSAGE_CNT)	stringArr.pop_front();
+		UpdateChatInterface(stringArr);
 	}
 }
 
@@ -112,8 +122,9 @@ void SendStr()
 	while (1)
 	{
 		string sent;
+		gotoxy(MAX_MESSAGE_CNT + 8, 1);
 
-		//cout << "Send Message : ";
+		cout << "Send Message : ";
 		getline(cin, sent);
 		send(clientSocket, sent.c_str(), sent.length(), 0);
 
@@ -123,5 +134,10 @@ void SendStr()
 			exitFlag = true;
 			return;
 		}
+		stringArr.push_back({ ME, sent });
+		if (stringArr.size() > MAX_MESSAGE_CNT)	stringArr.pop_front();
+		UpdateChatInterface(stringArr);
+		gotoxy(MAX_MESSAGE_CNT + 2, 0);
+		cout << BLANK_STR;
 	}
 }

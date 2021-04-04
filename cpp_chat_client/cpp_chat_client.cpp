@@ -45,6 +45,7 @@ void ShowErrorMessage(string message)
 
 bool InitClient()
 {
+	cout << "Client is running..\n";
 	/* ------ Init Winsock -------------------- */
 	cout << "Initialize Winsock2...   ";
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
