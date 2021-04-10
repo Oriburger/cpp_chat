@@ -1,4 +1,5 @@
 ﻿#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#pragma comment(lib, "ws2_32.lib")
 #include <iostream>
 #include <cstdio>
 #include <string>
@@ -16,7 +17,7 @@ const int serverPort = 9876;
 char received[256];
 deque<Message> stringArr;
 
-void ShowErrorMessage(string message);
+void ShowErrorMessage(const char* message);
 bool InitClient();
 void CloseClient();
 bool ConnectToServer();
@@ -38,10 +39,16 @@ int main()
 	return 0;
 }
 
-void ShowErrorMessage(string message)
+void ShowErrorMessage(const char* msg)
 {
-	cout << "Error occured! : " << message << '\n';
-	system("pause");
+	LPVOID lpMsgBuf;
+	FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+		NULL, WSAGetLastError(),
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPTSTR)&lpMsgBuf, 0, NULL);
+	MessageBox(NULL, (LPCTSTR)lpMsgBuf, msg, MB_ICONERROR);
+	LocalFree(lpMsgBuf);
 	exit(1);
 }
 

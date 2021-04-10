@@ -1,9 +1,9 @@
-﻿#include <iostream>
+﻿#pragma comment(lib, "ws2_32.lib")
+#include <iostream>
 #include <thread>
 #include <winsock2.h>
 #include "chatUI.h"
 
-WSADATA wsaData;
 SOCKET serverSocket, clientSocket;
 SOCKADDR_IN serverAddress, clientAddress;
 
@@ -11,7 +11,7 @@ bool exitFlag = false;
 const int serverPort = 9876;
 deque<Message> stringArr;
 
-void ShowErrorMessage(string message);
+void ShowErrorMessage(const char * msg);
 bool InitServer();
 void ConnectClient();
 void CloseServer();
@@ -34,16 +34,23 @@ int main()
 	return 0;
 }
 
-void ShowErrorMessage(string message)
+void ShowErrorMessage(const char * msg)
 {
-	cout << "[Error occured] : " << message << '\n';
-	system("pause");
+	LPVOID lpMsgBuf;
+	FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+		NULL, WSAGetLastError(),
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPTSTR)&lpMsgBuf, 0, NULL);
+	MessageBox(NULL, (LPCTSTR)lpMsgBuf, msg, MB_ICONERROR);
+	LocalFree(lpMsgBuf);
 	exit(1);
 }
 
 bool InitServer()
 {
-	// ------ Init Winsock -------------------- 
+	// ------ Init Winsock --------------------
+	WSADATA wsaData;
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData))
 		ShowErrorMessage("WSAStartup()");
 	cout << "Server is running .. \n";
